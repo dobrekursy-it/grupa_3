@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Miner</title>
+</head>
+<body>
+<style>
+    #board {
+        line-height: 0px;
+    }
+
+    .field, .disabled {
+        width: 25px;
+        height: 25px;
+        box-sizing: border-box;
+        border: 1px dotted lightgray;
+        background-color: cornflowerblue;
+        display: inline-block;
+        margin: 0;
+        font-size: 16px;
+        font-weight: bold;
+        color: darkblue;
+        line-height: 23px;
+        text-align: center;
+        vertical-align: middle;
+        font-family: sans-serif;
+    }
+
+    .field:hover, .disabled {
+        cursor: pointer;
+        background-color: lightblue;
+        border: 1px solid lightblue;
+    }
+</style>
+<div id="board">
+</div>
+
+<script>
+    const createMinerObjects = (boardSize, onFieldClick, onCtrlClick) => {
+        const board = document.getElementById('board');
+        const fields = {
+            size: boardSize,
+        };
+
+        // set board size
+        board.style.width = `${boardSize * 25}px`;
+
+        for (let y = 0; y < boardSize; y++) {
+            fields[y] = {};
+            for (let x = 0; x < boardSize; x++) {
+                const data = {
+                    value: null,
+                    hasBomb: false,
+                    tag: null,
+                    reveal: (value) => {
+                        data.tag.className = 'disabled';
+                        data.tag.innerText = value;
+                    }
+                };
+                data.tag = document.createElement("div");
+                data.tag.className = 'field';
+                data.tag.onclick = (event) => {
+                    if (data.tag.className != 'field') {
+                        return ;
+                    }
+                    if (event.metaKey || event.ctrlKey) {
+                        onCtrlClick(x, y, fields);
+                    } else {
+                        onFieldClick(x, y, fields);
+                    }
+                }
+                board.appendChild(data.tag);
+                fields[y][x] = data;
+            }
+        }
+        return fields;
+    }
+
+    const boardSize = 10;
+
+    const onClick = (x, y, fields) => {
+        if (fields[y][x].hasBomb) {
+          alert('Przegrales');
+          document.location.reload(true);
+        } else {
+          reveal(x,y, fields);
+        }
+    }
+
+    const fields = createMinerObjects(boardSize, onClick, onClick);
+
+    const reveal = (x, y, fields) => {
+      if (!fields[y] || !fields[y][x]) {
+        return;
+      }
+      let bombsNear = countBombsNear(x, y, fields);
+      if (bombsNear == 0) {
+        fields[y][x].reveal('');
+        reveal(x+1, y, fields);
+        reveal(x, y+1, fields);
+        reveal(x-1, y, fields);
+        reveal(x, y-1, fields);
+      } else {
+        fields[y][x].reveal(bombsNear);
+      }
+    }
+
+    const countBombsNear = (x, y, fields) => {
+      let bombsNear = 0;
+      for (let j = y -1; j <= y+1; j++) {
+        for (let k = x -1; k <= x+1; k++) {
+          if (fields[j] && fields[j][k] && fields[j][k].hasBomb) {
+            bombsNear += 1;
+          }
+        }
+      }
+      return bombsNear;
+    }
+
+    const placeBombs = (boardSize, fields, numberOfBombs) => {
+      while(numberOfBombs > 0) {
+        const x = Math.floor(Math.random()*boardSize);
+        const y = Math.floor(Math.random()*boardSize);
+        if (!fields[y][x].hasBomb) {
+            fields[y][x].hasBomb = true;
+            numberOfBombs--;
+            console.log(`Bomb location ${x} ${y}`);
+        }
+      }
+    }
+
+    placeBombs(boardSize, fields, Math.floor(boardSize*boardSize / 7));
+</script>
+</body>
+</html>
